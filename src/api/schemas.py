@@ -3,7 +3,7 @@ from typing import Optional
 
 class ProductResponse(BaseModel):
     id : int
-    titele : Optional[str] = None
+    title : Optional[str] = None
     category : Optional[str] = None
     price : Optional[int] = None
 
@@ -12,7 +12,7 @@ class ProductResponse(BaseModel):
 
 class CommentResponse(BaseModel):
     id : int
-    titele : Optional[str] = None
+    title : Optional[str] = None
     body : Optional[str] = None
     rate : Optional[int] = None
 

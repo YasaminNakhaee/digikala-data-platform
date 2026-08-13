@@ -25,6 +25,8 @@ def run_import_pipeline():
 
                 if "body" in chunk.columns:
                     chunk = chunk.dropna(subset={"body"})
+                    chunk = chunk[chunk["body"].astype(str).str.len() >= 5]
+                    chunk["rate"] = chunk["rate"].fillna(0)
 
                 chunk.to_sql("comments", engine , if_exists = "append", index = False)
                 total_rows += len(chunk)
