@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends
+#from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import func,desc
@@ -30,6 +31,19 @@ def get_product_comments(product_id:int,db:Session=Depends(get_db)):
 def search_products(q:str, db:Session=Depends(get_db)):
     products = db.query(Product).filter(Product.title.contains(q)).all()
     return products
+
+@app.get("/products/{product_id}", response_model=ProductResponse)
+def get_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if product is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
+    return product
+
 
 @app.get("/products/{product_id}/comments/top", response_model=List[CommentResponse])
 def get_top_comments(product_id:int, db:Session=Depends(get_db)):
@@ -75,7 +89,7 @@ def export_analytics_csv(db: Session=Depends(get_db)):
     ).reset_index()
 
     stream = io.StringIO()
-    report_df.to_csv(stream, index = False)
+    report_df.to_csv(stream, index = False)#
 
     response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename = digikala_analytics_report.csv"
