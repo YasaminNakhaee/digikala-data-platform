@@ -1,6 +1,9 @@
 pandas 
 sqlalchemy 
-psycopg2 
+psycopg2-binary 
 python-dotenv 
 fastapi 
 uvicorn
+email-validator
+sentence-transformers
+pgvector

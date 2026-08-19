@@ -5,6 +5,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from src.db.database import Base
+from pgvector.sqlalchemy import Vector
+
 
 # --- ۱. مدیریت کاربران ---
 class User(Base):
@@ -105,6 +107,7 @@ class Comment(Base):
     title = Column(String(300), nullable=True)
     body = Column(Text, nullable=True)
     rate = Column(Integer, nullable=True)
+    embedding = Column(Vector(384))
     is_buyer = Column(Boolean, default=False)
     sentiment = Column(String(20), nullable=True)  # positive, negative, neutral
     created_at = Column(DateTime, default=datetime.utcnow)

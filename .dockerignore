@@ -1,0 +1,26 @@
+# Virtual environment
+venv/
+.venv/
+
+# Large dataset
+data/*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs
+logs/
+
+# Environment variables
+.env
+
+# Git
+.git/
+.gitignore
+
+# ZIP files
+*.zip
+
+# VS Code
+.vscode/

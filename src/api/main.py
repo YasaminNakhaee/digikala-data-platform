@@ -4,8 +4,9 @@ from typing import List, Optional
 from sqlalchemy import func, desc
 import pandas as pd
 import io
+from src.ai.nlp import get_enbedding
 from fastapi.responses import StreamingResponse
-
+ 
 from src.db.database import get_db, engine
 from src.db.models import (
     User, Address, Category, Brand, 
@@ -292,3 +293,19 @@ def export_analytics_csv(db: Session = Depends(get_db)):
     response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=digikala_analytics_report.csv"
     return response
+
+@app.get("/search/comments")
+def semantic_search_comments(query:str,limit:int=5,db: Session = Depends(get_db)):
+    query_vector = get_enbedding(query)
+    similar_comments = db.query(Comment).filter(Comment.embedding.is_not(None)).order_by(Comment.embedding.cosine_distance(query_vector)).limit(limit).all()
+
+    results = []
+    for comment in similar_comments:
+        results.append({
+            "id": comment.id,
+            "body": comment.body,
+            "rate": comment.rate
+
+        })
+    return results
+    
