@@ -1,12 +1,17 @@
-from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi import FastAPI, Depends, HTTPException, Query, status, Request
+from fastapi.responses import StreamingResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from sqlalchemy import func, desc
 import pandas as pd
 import io
+import os
+from pathlib import Path
+
+# ایمپورت‌های پروژه
 from src.ai.nlp import get_enbedding
-from fastapi.responses import StreamingResponse
- 
 from src.db.database import get_db, engine
 from src.db.models import (
     User, Address, Category, Brand, 
@@ -28,6 +33,54 @@ app = FastAPI(
     description="سیستم جامع سرویس‌های دیجی‌کالا برای تمامی مدل‌ها",
     version="2.0.0"
 )
+
+# =========================================================
+# ⚙️ تنظیمات مسیرهای استاتیک و قالب‌ها (HTML)
+# =========================================================
+# پیدا کردن مسیر اصلی پروژه (Root)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# متصل کردن پوشه static (واقع در روت پروژه)
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# تنظیمات Jinja2 برای پیدا کردن پوشه templates (واقع در روت پروژه)
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+# =========================================================
+# 🖥️ روت‌های فرانت‌اند (UI - رندر صفحات HTML بصورت SSR)
+# =========================================================
+@app.get("/", tags=["UI"])
+def render_home(request: Request, db: Session = Depends(get_db)):
+    # دریافت داینامیک دیتا از دیتابیس برای نمایش در صفحه اصلی
+    products = db.query(Product).limit(15).all()
+    
+    return templates.TemplateResponse(
+        request=request, 
+        name="pages/index.html", 
+        context={"products": products}
+    )
+
+@app.get("/product/{product_id}", tags=["UI"])
+def render_product_page(request: Request, product_id: int, db: Session = Depends(get_db)):
+    # دریافت کامل اطلاعات محصول، فروشندگان و نظرات از دیتابیس
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="محصول یافت نشد")
+        
+    sellers = db.query(SellerProduct).filter(SellerProduct.product_id == product_id).all()
+    comments = db.query(Comment).filter(Comment.product_id == product_id).all()
+    
+    return templates.TemplateResponse(
+        request=request, 
+        name="pages/product.html", 
+        context={
+            "product": product,
+            "sellers": sellers,
+            "comments": comments
+        }
+    )
+
 
 # =========================================================
 # 👤 ۱. کاربران (Users)
@@ -305,7 +358,5 @@ def semantic_search_comments(query:str,limit:int=5,db: Session = Depends(get_db)
             "id": comment.id,
             "body": comment.body,
             "rate": comment.rate
-
         })
     return results
-    
