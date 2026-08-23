@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 # ایمپورت‌های پروژه
-from src.ai.nlp import get_enbedding
+from src.ai.nlp import get_embedding
 from src.db.database import get_db, engine
 from src.db.models import (
     User, Address, Category, Brand, 
@@ -179,7 +179,7 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
     
     # ترکیب عنوان و توضیحات و ساخت وکتور
     full_text = f"{product_in.title} {product_in.description or ''}".strip()
-    product_data["embedding"] = get_enbedding(full_text)
+    product_data["embedding"] = get_embedding(full_text)
     
     product = Product(**product_data)
     db.add(product)
@@ -243,7 +243,7 @@ def add_comment(comment_in: CommentCreate, db: Session = Depends(get_db)):
 
     # ۱. تولید بردار معنایی از متن نظر
     if comment_in.body:
-        comment_data["embedding"] = get_enbedding(comment_in.body)
+        comment_data["embedding"] = get_embedding(comment_in.body)
 
     comment = Comment(**comment_data)
     db.add(comment)
@@ -361,7 +361,7 @@ def export_analytics_csv(db: Session = Depends(get_db)):
 
 @app.get("/search/comments")
 def semantic_search_comments(query:str,limit:int=5,db: Session = Depends(get_db)):
-    query_vector = get_enbedding(query)
+    query_vector = get_embedding(query)
     similar_comments = db.query(Comment).filter(Comment.embedding.is_not(None)).order_by(Comment.embedding.cosine_distance(query_vector)).limit(limit).all()
 
     results = []
@@ -375,7 +375,7 @@ def semantic_search_comments(query:str,limit:int=5,db: Session = Depends(get_db)
 
 @app.get("/search/products/semantic", response_model=List[ProductListResponse], tags=["Products"])
 def semantic_search_products(query: str, limit: int = 5, db: Session = Depends(get_db)):
-    query_vector = get_enbedding(query)
+    query_vector = get_embedding(query)
     similar_products = (
         db.query(Product)
         .filter(Product.embedding.is_not(None))
